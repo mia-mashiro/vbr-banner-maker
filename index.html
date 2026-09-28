@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VBR 横断幕メーカー</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#181c26; --panel2:#222837;
+    --text:#f7f8fb; --muted:#aeb6c5; --accent:#8b7cff; --border:#343b4c;
+  }
+  *{box-sizing:border-box}
+  html, body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Yu Gothic UI","Meiryo",sans-serif;
+    overflow:hidden;
+  }
+  .app{
+    display:grid;
+    grid-template-columns:400px 1fr;
+    height:100vh;
+    overflow:hidden;
+  }
+  .sidebar{
+    background:var(--panel);
+    border-right:1px solid var(--border);
+    padding:18px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    height:100%;
+  }
+  .main{
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    height:100%;
+  }
+  h1{font-size:21px; margin:0 0 4px}
+  .sub{font-size:12px; color:var(--muted); margin-bottom:14px}
+  .group{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:13px;
+    margin-bottom:12px;
+  }
+  .group h2{font-size:14px; margin:0 0 9px}
+  label{display:block; font-size:12px; color:var(--muted); margin:8px 0 5px}
+  input[type="text"], input[type="number"], textarea, select{
+    width:100%; padding:9px 10px; border-radius:9px;
+    background:#10141d; border:1px solid var(--border); color:var(--text);
+  }
+  textarea{min-height:58px; resize:vertical}
+  input[type="range"]{width:100%}
+  input[type="color"]{width:100%; height:36px; border:none; background:none; padding:0}
+  input[type="file"]{width:100%; color:var(--muted)}
+  input[type="checkbox"]{transform:translateY(1px)}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:9px}
+  .buttons{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+  .inline{
+    display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text);
+  }
+  .checks{
+    display:flex; flex-wrap:wrap; gap:14px; margin-top:8px;
+  }
+  button{
+    border:0; border-radius:10px; padding:10px 12px; cursor:pointer;
+    font-weight:700; font-size:13px;
+  }
+  .primary{background:var(--accent); color:#fff}
+  .secondary{background:#333a4d; color:#fff}
+  .danger{background:#5a2c35; color:#fff}
+  .canvas-wrap{
+    width:min(100%, 1200px);
+    aspect-ratio:3/1;
+    background:#0b0d12;
+    border:1px solid var(--border);
+    border-radius:0;
+    overflow:hidden;
+    box-shadow:0 12px 32px rgba(0,0,0,.25);
+    flex:0 0 auto;
+  }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    touch-action:none;
+    cursor:grab;
+  }
+  canvas:active{cursor:grabbing}
+  .help{font-size:13px; color:var(--muted); line-height:1.5}
+  .badge{
+    display:inline-block; padding:4px 8px; border-radius:999px;
+    background:#2c3344; color:#dfe4ee; font-size:11px;
+  }
+  .small{font-size:11px;color:var(--muted)}
+  .topbar{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  @media(max-width:900px){
+    body{overflow:auto}
+    .app{grid-template-columns:1fr; height:auto}
+    .sidebar{border-right:0; border-bottom:1px solid var(--border); height:auto; overflow:visible}
+    .main{height:auto; overflow:visible}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h1>VBR 横断幕メーカー</h1>
+    <div class="sub">出力サイズ 1800 × 600 px</div>
+
+    <div class="group">
+      <h2>① 背景</h2>
+      <input id="bgFile" type="file" accept="image/*">
+      <div class="row">
+        <div>
+          <label>拡大率</label>
+          <input id="bgScale" type="range" min="50" max="250" value="100">
+        </div>
+        <div>
+          <label>背景位置リセット</label>
+          <button id="resetBg" class="secondary" style="width:100%">中央に戻す</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>② 選手情報</h2>
+      <label>選手番号</label>
+      <input id="playerNo" type="text" value="0000">
+      <label>選手名</label>
+      <input id="playerName" type="text" value="選手名">
+    </div>
+
+    <div class="group">
+      <h2>③ コメント</h2>
+      <div class="row">
+        <div><label>コメント1</label></div>
+        <label class="inline" style="justify-content:flex-end;margin-top:8px;">
+          <input id="hideComment1" type="checkbox">非表示
+        </label>
+      </div>
+      <textarea id="comment1">コメントを表示</textarea>
+
+      <div class="row">
+        <div><label>コメント2</label></div>
+        <label class="inline" style="justify-content:flex-end;margin-top:8px;">
+          <input id="hideComment2" type="checkbox">非表示
+        </label>
+      </div>
+      <textarea id="comment2"></textarea>
+
+      <div class="row">
+        <div><label>コメント3</label></div>
+        <label class="inline" style="justify-content:flex-end;margin-top:8px;">
+          <input id="hideComment3" type="checkbox">非表示
+        </label>
+      </div>
+      <textarea id="comment3"></textarea>
+
+      <div class="row">
+        <div><label>コメント4</label></div>
+        <label class="inline" style="justify-content:flex-end;margin-top:8px;">
+          <input id="hideComment4" type="checkbox">非表示
+        </label>
+      </div>
+      <textarea id="comment4"></textarea>
+      <div class="small">「非表示」にチェックすると、プレビューとPNG出力の両方から一時的に隠れます。</div>
+    </div>
+
+    <div class="group">
+      <h2>④ 編集対象</h2>
+      <select id="selected">
+        <option value="number">選手番号</option>
+        <option value="name">選手名</option>
+        <option value="comment1">コメント1</option>
+        <option value="comment2">コメント2</option>
+        <option value="comment3">コメント3</option>
+        <option value="comment4">コメント4</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label>文字サイズ</label>
+          <input id="fontSize" type="range" min="20" max="220" value="90">
+        </div>
+        <div>
+          <label>単色</label>
+          <input id="fontColor" type="color" value="#ffffff">
+        </div>
+      </div>
+
+      <label class="inline">
+        <input id="useGradient" type="checkbox">
+        グラデーションを使用
+      </label>
+
+      <div class="row">
+        <div>
+          <label>グラデーション色1</label>
+          <input id="gradientColor1" type="color" value="#ffffff">
+        </div>
+        <div>
+          <label>グラデーション色2</label>
+          <input id="gradientColor2" type="color" value="#8b7cff">
+        </div>
+      </div>
+
+      <label>グラデーション方向</label>
+      <select id="gradientDirection">
+        <option value="horizontal">横（左 → 右）</option>
+        <option value="vertical">縦（上 → 下）</option>
+        <option value="diag1">斜め（左上 → 右下）</option>
+        <option value="diag2">斜め（右上 → 左下）</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label>縁取り</label>
+          <input id="strokeWidth" type="range" min="0" max="20" value="5">
+        </div>
+        <div>
+          <label>縁取り色</label>
+          <input id="strokeColor" type="color" value="#000000">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>回転スライダー（-180 ～ 180°）</label>
+          <input id="rotation" type="range" min="-180" max="180" value="0">
+        </div>
+        <div>
+          <label>回転数値入力（°）</label>
+          <input id="rotationNumber" type="number" min="-180" max="180" step="1" value="0">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>レイヤー（大きいほど手前）</label>
+          <input id="layer" type="range" min="1" max="20" value="10">
+        </div>
+        <div>
+          <label>レイヤー値</label>
+          <input id="layerNumber" type="number" min="1" max="20" step="1" value="10">
+        </div>
+      </div>
+
+      <div class="checks">
+        <label class="inline"><input id="boldToggle" type="checkbox">太字</label>
+        <label class="inline"><input id="italicToggle" type="checkbox">斜体</label>
+      </div>
+
+      <label>フォント</label>
+      <select id="fontFamily">
+        <optgroup label="ゴシック系">
+          <option value='"Yu Gothic UI","Yu Gothic",sans-serif'>游ゴシック</option>
+          <option value='"Meiryo",sans-serif'>メイリオ</option>
+          <option value='"Noto Sans JP","Yu Gothic UI",sans-serif'>Noto Sans JP</option>
+          <option value='"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif'>ヒラギノ角ゴ</option>
+          <option value='"Arial",sans-serif'>Arial</option>
+          <option value='"Verdana",sans-serif'>Verdana</option>
+          <option value='"Trebuchet MS",sans-serif'>Trebuchet MS</option>
+          <option value='"Impact",sans-serif'>Impact</option>
+        </optgroup>
+        <optgroup label="明朝・セリフ系">
+          <option value='"Yu Mincho","YuMincho",serif'>游明朝</option>
+          <option value='"Hiragino Mincho ProN",serif'>ヒラギノ明朝</option>
+          <option value='"Times New Roman",serif'>Times New Roman</option>
+          <option value='"Georgia",serif'>Georgia</option>
+        </optgroup>
+        <optgroup label="装飾・個性系">
+          <option value='"Arial Black",sans-serif'>Arial Black</option>
+          <option value='"Courier New",monospace'>Courier New</option>
+          <option value='"Comic Sans MS",cursive'>Comic Sans MS</option>
+          <option value='"Segoe Script",cursive'>Segoe Script</option>
+          <option value='"Brush Script MT",cursive'>Brush Script MT</option>
+        </optgroup>
+      </select>
+      <div class="small">※実際に表示できるフォントはPCにインストールされているものに依存します。</div>
+    </div>
+
+    <div class="group">
+      <h2>⑤ 外枠装飾</h2>
+      <label>外枠スタイル</label>
+      <select id="frameStyle">
+        <option value="none">なし</option>
+        <option value="single">シングル</option>
+        <option value="double">ダブル</option>
+        <option value="corners">コーナー装飾</option>
+        <option value="glow">発光風</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label>色1</label>
+          <input id="frameColor1" type="color" value="#ffffff">
+        </div>
+        <div>
+          <label>色2</label>
+          <input id="frameColor2" type="color" value="#8b7cff">
+        </div>
+      </div>
+
+      <div class="row3">
+        <div>
+          <label>太さ</label>
+          <input id="frameWidth" type="range" min="1" max="30" value="8">
+        </div>
+        <div>
+          <label>余白</label>
+          <input id="frameInset" type="range" min="0" max="80" value="18">
+        </div>
+        <div>
+          <label>角丸</label>
+          <input id="frameRadius" type="range" min="0" max="80" value="18">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>外枠レイヤー（大きいほど手前）</label>
+          <input id="frameLayer" type="range" min="1" max="20" value="20">
+        </div>
+        <div>
+          <label>外枠レイヤー値</label>
+          <input id="frameLayerNumber" type="number" min="1" max="20" step="1" value="20">
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>配置</h2>
+      <div class="help">プレビュー上の文字を直接ドラッグして移動できます。背景も、文字以外の場所をドラッグすると移動できます。</div>
+      <div class="buttons" style="margin-top:10px">
+        <button id="resetText" class="secondary">文字位置リセット</button>
+        <button id="clearBg" class="danger">背景を消す</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>書き出し</h2>
+      <button id="download" class="primary" style="width:100%">PNGで保存</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <span class="badge">プレビュー 1800 × 600</span>
+      <span class="small">左メニューと右プレビューは別々にスクロールします。</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="canvas" width="1800" height="600"></canvas>
+    </div>
+    <div class="help">選択中の文字は紫の回転枠で表示されます。書き出したPNGには枠は入りません。</div>
+    <div class="help">レイヤーは「数値が大きいほど手前」に描画されます。</div>
+  </main>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const els = {
+  bgFile: document.getElementById('bgFile'),
+  bgScale: document.getElementById('bgScale'),
+  playerNo: document.getElementById('playerNo'),
+  playerName: document.getElementById('playerName'),
+  comment1: document.getElementById('comment1'),
+  comment2: document.getElementById('comment2'),
+  comment3: document.getElementById('comment3'),
+  comment4: document.getElementById('comment4'),
+  hideComment1: document.getElementById('hideComment1'),
+  hideComment2: document.getElementById('hideComment2'),
+  hideComment3: document.getElementById('hideComment3'),
+  hideComment4: document.getElementById('hideComment4'),
+  selected: document.getElementById('selected'),
+  fontSize: document.getElementById('fontSize'),
+  fontColor: document.getElementById('fontColor'),
+  useGradient: document.getElementById('useGradient'),
+  gradientColor1: document.getElementById('gradientColor1'),
+  gradientColor2: document.getElementById('gradientColor2'),
+  gradientDirection: document.getElementById('gradientDirection'),
+  strokeWidth: document.getElementById('strokeWidth'),
+  strokeColor: document.getElementById('strokeColor'),
+  rotation: document.getElementById('rotation'),
+  rotationNumber: document.getElementById('rotationNumber'),
+  layer: document.getElementById('layer'),
+  layerNumber: document.getElementById('layerNumber'),
+  boldToggle: document.getElementById('boldToggle'),
+  italicToggle: document.getElementById('italicToggle'),
+  fontFamily: document.getElementById('fontFamily'),
+  frameStyle: document.getElementById('frameStyle'),
+  frameColor1: document.getElementById('frameColor1'),
+  frameColor2: document.getElementById('frameColor2'),
+  frameWidth: document.getElementById('frameWidth'),
+  frameInset: document.getElementById('frameInset'),
+  frameRadius: document.getElementById('frameRadius'),
+  frameLayer: document.getElementById('frameLayer'),
+  frameLayerNumber: document.getElementById('frameLayerNumber'),
+  resetBg: document.getElementById('resetBg'),
+  resetText: document.getElementById('resetText'),
+  clearBg: document.getElementById('clearBg'),
+  download: document.getElementById('download')
+};
+
+const baseObj = (x,y,size,layer)=>({
+  x,y,size,
+  color:'#ffffff',
+  stroke:'#000000',
+  strokeWidth:5,
+  font:'"Yu Gothic UI","Yu Gothic",sans-serif',
+  useGradient:false,
+  gradient1:'#ffffff',
+  gradient2:'#8b7cff',
+  gradientDirection:'horizontal',
+  rotation:0,
+  layer,
+  bold:true,
+  italic:false,
+  visible:true
+});
+
+const state = {
+  bg: null,
+  bgX: 900, bgY: 300, bgScale: 1,
+  dragging: null,
+  dragOffsetX: 0, dragOffsetY: 0,
+  frame: {
+    style:'none',
+    color1:'#ffffff',
+    color2:'#8b7cff',
+    width:8,
+    inset:18,
+    radius:18,
+    layer:20
+  },
+  objects: {
+    number: {...baseObj(120,115,105,5), strokeWidth:6},
+    name: {...baseObj(390,115,100,6), strokeWidth:6},
+    comment1: {...baseObj(120,300,68,7)},
+    comment2: {...baseObj(120,390,54,8)},
+    comment3: {...baseObj(120,470,42,9)},
+    comment4: {...baseObj(120,535,34,10)}
+  }
+};
+
+function clamp(v, min, max){
+  return Math.min(max, Math.max(min, v));
+}
+
+function getText(key){
+  if(key==='number') return els.playerNo.value;
+  if(key==='name') return els.playerName.value;
+  return els[key].value;
+}
+
+function isVisible(key){
+  if(key==='comment1') return !els.hideComment1.checked;
+  if(key==='comment2') return !els.hideComment2.checked;
+  if(key==='comment3') return !els.hideComment3.checked;
+  if(key==='comment4') return !els.hideComment4.checked;
+  return true;
+}
+
+function roundRectPath(x,y,w,h,r){
+  const rr = Math.max(0, Math.min(r, Math.min(w,h)/2));
+  ctx.beginPath();
+  ctx.moveTo(x+rr,y);
+  ctx.lineTo(x+w-rr,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+  ctx.lineTo(x+w,y+h-rr);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+  ctx.lineTo(x+rr,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+  ctx.lineTo(x,y+rr);
+  ctx.quadraticCurveTo(x,y,x+rr,y);
+  ctx.closePath();
+}
+
+function drawBackground(){
+  ctx.fillStyle = '#1b1d24';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  if(!state.bg){
+    const g = ctx.createLinearGradient(0,0,1800,600);
+    g.addColorStop(0,'#202537');
+    g.addColorStop(1,'#151821');
+    ctx.fillStyle=g;
+    ctx.fillRect(0,0,1800,600);
+    ctx.fillStyle='rgba(255,255,255,.07)';
+    for(let i=0;i<8;i++){
+      ctx.beginPath();
+      ctx.arc(150+i*250, 100+(i%3)*180, 80, 0, Math.PI*2);
+      ctx.fill();
+    }
+    return;
+  }
+
+  const img = state.bg;
+  const fit = Math.max(canvas.width/img.width, canvas.height/img.height);
+  const scale = fit * state.bgScale;
+  const w = img.width*scale;
+  const h = img.height*scale;
+  ctx.drawImage(img, state.bgX-w/2, state.bgY-h/2, w, h);
+}
+
+function setFont(obj){
+  const style = obj.italic ? 'italic' : 'normal';
+  const weight = obj.bold ? '700' : '400';
+  ctx.font = `${style} ${weight} ${obj.size}px ${obj.font}`;
+  ctx.textBaseline='middle';
+  ctx.textAlign='left';
+  ctx.lineJoin='round';
+}
+
+function wrapLines(text){
+  return text.split('\n');
+}
+
+function textBounds(key){
+  const obj = state.objects[key];
+  const text = getText(key);
+  setFont(obj);
+  const lines = wrapLines(text || '');
+  let width = 0;
+  for(const line of lines) width = Math.max(width, ctx.measureText(line || ' ').width);
+  const lineHeight = obj.size*1.18;
+  const height = Math.max(lineHeight, lines.length*lineHeight);
+  return {x:obj.x, y:obj.y-height/2, w:Math.max(width,1), h:Math.max(height,1)};
+}
+
+function gradientByAngle(bounds, angleDeg, c1, c2){
+  const angle = angleDeg * Math.PI / 180;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const cx = 0;
+  const cy = 0;
+  const half = (Math.abs(dx)*bounds.w + Math.abs(dy)*bounds.h) / 2;
+  const x1 = cx - dx*half;
+  const y1 = cy - dy*half;
+  const x2 = cx + dx*half;
+  const y2 = cy + dy*half;
+  const g = ctx.createLinearGradient(x1, y1, x2, y2);
+  g.addColorStop(0, c1);
+  g.addColorStop(1, c2);
+  return g;
+}
+
+function makeGradient(obj,bounds){
+  if(obj.gradientDirection==='vertical'){
+    return gradientByAngle(bounds, 90, obj.gradient1, obj.gradient2);
+  }else if(obj.gradientDirection==='diag1'){
+    return gradientByAngle(bounds, 45, obj.gradient1, obj.gradient2);
+  }else if(obj.gradientDirection==='diag2'){
+    return gradientByAngle(bounds, 135, obj.gradient1, obj.gradient2);
+  }else{
+    return gradientByAngle(bounds, 0, obj.gradient1, obj.gradient2);
+  }
+}
+
+function drawText(key, guides=true){
+  const obj=state.objects[key];
+  const text=getText(key);
+  if(!text || !isVisible(key)) return;
+
+  setFont(obj);
+  const lines=wrapLines(text);
+  const lineHeight=obj.size*1.18;
+  const totalHeight=lines.length*lineHeight;
+  const startY=-totalHeight/2+lineHeight/2;
+  const bounds=textBounds(key);
+  const cx = bounds.x + bounds.w/2;
+  const cy = obj.y;
+  const fillStyle=obj.useGradient ? makeGradient(obj, {w:bounds.w, h:bounds.h}) : obj.color;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(obj.rotation * Math.PI / 180);
+
+  const baseX = -bounds.w/2;
+  lines.forEach((line,i)=>{
+    const lineText = line || ' ';
+    const y = startY+i*lineHeight;
+
+    if(obj.strokeWidth>0){
+      ctx.lineWidth=obj.strokeWidth;
+      ctx.strokeStyle=obj.stroke;
+      ctx.strokeText(lineText, baseX, y);
+    }
+    ctx.fillStyle=fillStyle;
+    ctx.fillText(lineText, baseX, y);
+  });
+
+  if(guides && els.selected.value===key){
+    ctx.save();
+    ctx.strokeStyle='#9d8cff';
+    ctx.lineWidth=3;
+    ctx.setLineDash([12,8]);
+    ctx.strokeRect(-bounds.w/2-15, -bounds.h/2-12, bounds.w+30, bounds.h+24);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function frameGradient(){
+  const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  g.addColorStop(0, state.frame.color1);
+  g.addColorStop(1, state.frame.color2);
+  return g;
+}
+
+function drawFrame(){
+  const f = state.frame;
+  if(f.style === 'none') return;
+
+  const inset = f.inset;
+  const x = inset;
+  const y = inset;
+  const w = canvas.width - inset*2;
+  const h = canvas.height - inset*2;
+  const grad = frameGradient();
+
+  ctx.save();
+  ctx.strokeStyle = grad;
+  ctx.fillStyle = grad;
+
+  if(f.style === 'single'){
+    ctx.lineWidth = f.width;
+    roundRectPath(x, y, w, h, f.radius);
+    ctx.stroke();
+  }
+  else if(f.style === 'double'){
+    ctx.lineWidth = f.width;
+    roundRectPath(x, y, w, h, f.radius);
+    ctx.stroke();
+
+    const gap = f.width * 2.2;
+    ctx.lineWidth = Math.max(1, f.width * 0.7);
+    roundRectPath(x+gap, y+gap, w-gap*2, h-gap*2, Math.max(0, f.radius-gap/2));
+    ctx.stroke();
+  }
+  else if(f.style === 'corners'){
+    ctx.lineWidth = f.width;
+    const len = Math.min(90 + f.width*2, Math.min(w,h)/3);
+    const r = f.radius;
+
+    ctx.beginPath();
+    ctx.moveTo(x+r, y); ctx.lineTo(x+len, y);
+    ctx.moveTo(x, y+r); ctx.lineTo(x, y+len);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x+w-r, y); ctx.lineTo(x+w-len, y);
+    ctx.moveTo(x+w, y+r); ctx.lineTo(x+w, y+len);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x+r, y+h); ctx.lineTo(x+len, y+h);
+    ctx.moveTo(x, y+h-r); ctx.lineTo(x, y+h-len);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x+w-r, y+h); ctx.lineTo(x+w-len, y+h);
+    ctx.moveTo(x+w, y+h-r); ctx.lineTo(x+w, y+h-len);
+    ctx.stroke();
+  }
+  else if(f.style === 'glow'){
+    ctx.shadowColor = f.color2;
+    ctx.shadowBlur = f.width * 3;
+    ctx.lineWidth = f.width;
+    roundRectPath(x, y, w, h, f.radius);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = Math.max(1, f.width * 0.6);
+    roundRectPath(x+f.width, y+f.width, w-f.width*2, h-f.width*2, Math.max(0, f.radius-f.width/2));
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function render(guides=true){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawBackground();
+
+  const items = [
+    {type:'text', key:'number', layer:state.objects.number.layer},
+    {type:'text', key:'name', layer:state.objects.name.layer},
+    {type:'text', key:'comment1', layer:state.objects.comment1.layer},
+    {type:'text', key:'comment2', layer:state.objects.comment2.layer},
+    {type:'text', key:'comment3', layer:state.objects.comment3.layer},
+    {type:'text', key:'comment4', layer:state.objects.comment4.layer},
+    {type:'frame', key:'frame', layer:state.frame.layer}
+  ];
+
+  items.sort((a,b)=>a.layer-b.layer || a.key.localeCompare(b.key));
+
+  for(const item of items){
+    if(item.type==='text') drawText(item.key, guides);
+    else drawFrame();
+  }
+}
+
+function syncControls(){
+  const obj=state.objects[els.selected.value];
+  els.fontSize.value=obj.size;
+  els.fontColor.value=obj.color;
+  els.useGradient.checked=obj.useGradient;
+  els.gradientColor1.value=obj.gradient1;
+  els.gradientColor2.value=obj.gradient2;
+  els.gradientDirection.value=obj.gradientDirection;
+  els.strokeWidth.value=obj.strokeWidth;
+  els.strokeColor.value=obj.stroke;
+  els.rotation.value=obj.rotation;
+  els.rotationNumber.value=obj.rotation;
+  els.layer.value=obj.layer;
+  els.layerNumber.value=obj.layer;
+  els.boldToggle.checked=obj.bold;
+  els.italicToggle.checked=obj.italic;
+  els.fontFamily.value=obj.font;
+
+  els.frameStyle.value = state.frame.style;
+  els.frameColor1.value = state.frame.color1;
+  els.frameColor2.value = state.frame.color2;
+  els.frameWidth.value = state.frame.width;
+  els.frameInset.value = state.frame.inset;
+  els.frameRadius.value = state.frame.radius;
+  els.frameLayer.value = state.frame.layer;
+  els.frameLayerNumber.value = state.frame.layer;
+}
+
+function updateSelected(){
+  const obj=state.objects[els.selected.value];
+  obj.size=+els.fontSize.value;
+  obj.color=els.fontColor.value;
+  obj.useGradient=els.useGradient.checked;
+  obj.gradient1=els.gradientColor1.value;
+  obj.gradient2=els.gradientColor2.value;
+  obj.gradientDirection=els.gradientDirection.value;
+  obj.strokeWidth=+els.strokeWidth.value;
+  obj.stroke=els.strokeColor.value;
+  obj.rotation=clamp(+els.rotation.value, -180, 180);
+  obj.layer=clamp(+els.layer.value, 1, 20);
+  obj.bold=els.boldToggle.checked;
+  obj.italic=els.italicToggle.checked;
+  obj.font=els.fontFamily.value;
+
+  els.rotationNumber.value = obj.rotation;
+  els.layerNumber.value = obj.layer;
+  render();
+}
+
+function updateSelectedFromNumbers(){
+  const obj=state.objects[els.selected.value];
+  obj.rotation = clamp(parseFloat(els.rotationNumber.value || 0), -180, 180);
+  obj.layer = clamp(parseInt(els.layerNumber.value || 1, 10), 1, 20);
+
+  els.rotation.value = obj.rotation;
+  els.rotationNumber.value = obj.rotation;
+  els.layer.value = obj.layer;
+  els.layerNumber.value = obj.layer;
+  render();
+}
+
+function updateFrame(){
+  state.frame.style = els.frameStyle.value;
+  state.frame.color1 = els.frameColor1.value;
+  state.frame.color2 = els.frameColor2.value;
+  state.frame.width = +els.frameWidth.value;
+  state.frame.inset = +els.frameInset.value;
+  state.frame.radius = +els.frameRadius.value;
+  state.frame.layer = clamp(+els.frameLayer.value, 1, 20);
+  els.frameLayerNumber.value = state.frame.layer;
+  render();
+}
+
+function updateFrameFromNumber(){
+  state.frame.layer = clamp(parseInt(els.frameLayerNumber.value || 1, 10), 1, 20);
+  els.frameLayer.value = state.frame.layer;
+  els.frameLayerNumber.value = state.frame.layer;
+  render();
+}
+
+['input','change'].forEach(evt=>{
+  [els.playerNo,els.playerName,els.comment1,els.comment2,els.comment3,els.comment4].forEach(el=>{
+    el.addEventListener(evt,()=>render());
+  });
+});
+
+[els.hideComment1, els.hideComment2, els.hideComment3, els.hideComment4].forEach(el=>{
+  el.addEventListener('change', ()=>render());
+});
+
+els.selected.addEventListener('change',()=>{syncControls();render();});
+[
+  els.fontSize,els.fontColor,els.useGradient,
+  els.gradientColor1,els.gradientColor2,els.gradientDirection,
+  els.strokeWidth,els.strokeColor,els.rotation, els.layer,
+  els.boldToggle, els.italicToggle, els.fontFamily
+].forEach(el=>{
+  el.addEventListener('input',updateSelected);
+  el.addEventListener('change',updateSelected);
+});
+
+els.rotationNumber.addEventListener('input', updateSelectedFromNumbers);
+els.rotationNumber.addEventListener('change', updateSelectedFromNumbers);
+els.layerNumber.addEventListener('input', updateSelectedFromNumbers);
+els.layerNumber.addEventListener('change', updateSelectedFromNumbers);
+
+[
+  els.frameStyle, els.frameColor1, els.frameColor2,
+  els.frameWidth, els.frameInset, els.frameRadius, els.frameLayer
+].forEach(el=>{
+  el.addEventListener('input', updateFrame);
+  el.addEventListener('change', updateFrame);
+});
+
+els.frameLayerNumber.addEventListener('input', updateFrameFromNumber);
+els.frameLayerNumber.addEventListener('change', updateFrameFromNumber);
+
+els.bgFile.addEventListener('change', e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      state.bg=img;
+      state.bgX=900; state.bgY=300; state.bgScale=1;
+      els.bgScale.value=100;
+      render();
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+els.bgScale.addEventListener('input',()=>{
+  state.bgScale=+els.bgScale.value/100;
+  render();
+});
+
+els.resetBg.addEventListener('click',()=>{
+  state.bgX=900; state.bgY=300; state.bgScale=1; els.bgScale.value=100; render();
+});
+
+els.clearBg.addEventListener('click',()=>{
+  state.bg=null; els.bgFile.value=''; render();
+});
+
+els.resetText.addEventListener('click',()=>{
+  Object.assign(state.objects.number,{x:120,y:115,rotation:0});
+  Object.assign(state.objects.name,{x:390,y:115,rotation:0});
+  Object.assign(state.objects.comment1,{x:120,y:300,rotation:0});
+  Object.assign(state.objects.comment2,{x:120,y:390,rotation:0});
+  Object.assign(state.objects.comment3,{x:120,y:470,rotation:0});
+  Object.assign(state.objects.comment4,{x:120,y:535,rotation:0});
+  syncControls();
+  render();
+});
+
+function pointerPos(e){
+  const r=canvas.getBoundingClientRect();
+  return {
+    x:(e.clientX-r.left)*(canvas.width/r.width),
+    y:(e.clientY-r.top)*(canvas.height/r.height)
+  };
+}
+
+function pointInRotatedText(key, px, py){
+  const obj = state.objects[key];
+  const text = getText(key);
+  if(!text || !isVisible(key)) return false;
+
+  const b = textBounds(key);
+  const cx = b.x + b.w/2;
+  const cy = obj.y;
+  const rad = -obj.rotation * Math.PI / 180;
+  const dx = px - cx;
+  const dy = py - cy;
+  const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+  const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+  return (
+    lx >= -b.w/2 - 20 &&
+    lx <=  b.w/2 + 20 &&
+    ly >= -b.h/2 - 20 &&
+    ly <=  b.h/2 + 20
+  );
+}
+
+function hitText(x,y){
+  const keys = ['number','name','comment1','comment2','comment3','comment4']
+    .sort((a,b)=>state.objects[b].layer - state.objects[a].layer);
+
+  for(const key of keys){
+    if(pointInRotatedText(key, x, y)) return key;
+  }
+  return null;
+}
+
+canvas.addEventListener('pointerdown',e=>{
+  canvas.setPointerCapture(e.pointerId);
+  const p=pointerPos(e);
+  const hit=hitText(p.x,p.y);
+
+  if(hit){
+    els.selected.value=hit;
+    syncControls();
+    state.dragging=hit;
+    state.dragOffsetX=p.x-state.objects[hit].x;
+    state.dragOffsetY=p.y-state.objects[hit].y;
+  }else if(state.bg){
+    state.dragging='bg';
+    state.dragOffsetX=p.x-state.bgX;
+    state.dragOffsetY=p.y-state.bgY;
+  }
+  render();
+});
+
+canvas.addEventListener('pointermove',e=>{
+  if(!state.dragging) return;
+  const p=pointerPos(e);
+
+  if(state.dragging==='bg'){
+    state.bgX=p.x-state.dragOffsetX;
+    state.bgY=p.y-state.dragOffsetY;
+  }else{
+    state.objects[state.dragging].x=p.x-state.dragOffsetX;
+    state.objects[state.dragging].y=p.y-state.dragOffsetY;
+  }
+  render();
+});
+
+canvas.addEventListener('pointerup',()=>state.dragging=null);
+canvas.addEventListener('pointercancel',()=>state.dragging=null);
+
+els.download.addEventListener('click',()=>{
+  render(false);
+  const a=document.createElement('a');
+  const name=(els.playerNo.value+'_'+els.playerName.value+'_VBR横断幕').replace(/[\\/:*?"<>|]/g,'_');
+  a.download=name+'.png';
+  a.href=canvas.toDataURL('image/png');
+  a.click();
+  render(true);
+});
+
+syncControls();
+render();
+</script>
+</body>
+</html>
