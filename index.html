@@ -99,6 +99,32 @@
     background:#2c3344; color:#dfe4ee; font-size:11px;
   }
   .small{font-size:11px;color:var(--muted)}
+
+  .color-editor{
+    display:grid;
+    grid-template-columns:44px 1fr 68px;
+    gap:7px;
+    align-items:center;
+  }
+  .color-editor input[type="color"]{
+    width:44px;
+    height:36px;
+  }
+  .color-editor input[type="text"]{
+    font-family:Consolas,"Courier New",monospace;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  .copy-color{
+    padding:8px 8px;
+    font-size:12px;
+    background:#333a4d;
+    color:#fff;
+  }
+  .copy-color.copied{
+    background:#405a49;
+  }
+
   .topbar{
     display:flex;
     gap:12px;
@@ -189,15 +215,14 @@
         <option value="comment4">コメント4</option>
       </select>
 
-      <div class="row">
-        <div>
-          <label>文字サイズ</label>
-          <input id="fontSize" type="range" min="20" max="220" value="90">
-        </div>
-        <div>
-          <label>単色</label>
-          <input id="fontColor" type="color" value="#ffffff">
-        </div>
+      <label>文字サイズ</label>
+      <input id="fontSize" type="range" min="20" max="220" value="90">
+
+      <label>単色</label>
+      <div class="color-editor">
+        <input id="fontColor" type="color" value="#ffffff">
+        <input id="fontColorHex" type="text" value="#FFFFFF" maxlength="7">
+        <button class="copy-color" type="button" data-copy-target="fontColorHex">コピー</button>
       </div>
 
       <label class="inline">
@@ -205,15 +230,18 @@
         グラデーションを使用
       </label>
 
-      <div class="row">
-        <div>
-          <label>グラデーション色1</label>
-          <input id="gradientColor1" type="color" value="#ffffff">
-        </div>
-        <div>
-          <label>グラデーション色2</label>
-          <input id="gradientColor2" type="color" value="#8b7cff">
-        </div>
+      <label>グラデーション色1</label>
+      <div class="color-editor">
+        <input id="gradientColor1" type="color" value="#ffffff">
+        <input id="gradientColor1Hex" type="text" value="#FFFFFF" maxlength="7">
+        <button class="copy-color" type="button" data-copy-target="gradientColor1Hex">コピー</button>
+      </div>
+
+      <label>グラデーション色2</label>
+      <div class="color-editor">
+        <input id="gradientColor2" type="color" value="#8b7cff">
+        <input id="gradientColor2Hex" type="text" value="#8B7CFF" maxlength="7">
+        <button class="copy-color" type="button" data-copy-target="gradientColor2Hex">コピー</button>
       </div>
 
       <label>グラデーション方向</label>
@@ -224,15 +252,14 @@
         <option value="diag2">斜め（右上 → 左下）</option>
       </select>
 
-      <div class="row">
-        <div>
-          <label>縁取り</label>
-          <input id="strokeWidth" type="range" min="0" max="20" value="5">
-        </div>
-        <div>
-          <label>縁取り色</label>
-          <input id="strokeColor" type="color" value="#000000">
-        </div>
+      <label>縁取り</label>
+      <input id="strokeWidth" type="range" min="0" max="20" value="5">
+
+      <label>縁取り色</label>
+      <div class="color-editor">
+        <input id="strokeColor" type="color" value="#000000">
+        <input id="strokeColorHex" type="text" value="#000000" maxlength="7">
+        <button class="copy-color" type="button" data-copy-target="strokeColorHex">コピー</button>
       </div>
 
       <div class="row">
@@ -264,31 +291,43 @@
 
       <label>フォント</label>
       <select id="fontFamily">
-        <optgroup label="ゴシック系">
-          <option value='"Yu Gothic UI","Yu Gothic",sans-serif'>游ゴシック</option>
+        <optgroup label="日本語 ゴシック系">
+          <option value='"Yu Gothic UI","Yu Gothic",sans-serif'>游ゴシック UI</option>
+          <option value='"Yu Gothic","Yu Gothic UI",sans-serif'>游ゴシック</option>
           <option value='"Meiryo",sans-serif'>メイリオ</option>
+          <option value='"Meiryo UI","Meiryo",sans-serif'>メイリオ UI</option>
+          <option value='"BIZ UDPGothic","Yu Gothic UI",sans-serif'>BIZ UDPゴシック</option>
+          <option value='"BIZ UDGothic","Yu Gothic UI",sans-serif'>BIZ UDゴシック</option>
+          <option value='"MS PGothic","MS Gothic",sans-serif'>ＭＳ Ｐゴシック</option>
+          <option value='"MS Gothic","Yu Gothic UI",monospace'>ＭＳ ゴシック</option>
           <option value='"Noto Sans JP","Yu Gothic UI",sans-serif'>Noto Sans JP</option>
-          <option value='"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif'>ヒラギノ角ゴ</option>
+          <option value='"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif'>ヒラギノ角ゴ ProN</option>
+          <option value='"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif'>ヒラギノ Sans</option>
+        </optgroup>
+        <optgroup label="日本語 明朝系">
+          <option value='"Yu Mincho","YuMincho",serif'>游明朝</option>
+          <option value='"BIZ UDPMincho","Yu Mincho",serif'>BIZ UDP明朝</option>
+          <option value='"BIZ UDMincho","Yu Mincho",serif'>BIZ UD明朝</option>
+          <option value='"MS PMincho","MS Mincho",serif'>ＭＳ Ｐ明朝</option>
+          <option value='"MS Mincho","Yu Mincho",serif'>ＭＳ 明朝</option>
+          <option value='"Noto Serif JP","Yu Mincho",serif'>Noto Serif JP</option>
+          <option value='"Hiragino Mincho ProN","Yu Mincho",serif'>ヒラギノ明朝 ProN</option>
+        </optgroup>
+        <optgroup label="欧文・装飾系">
           <option value='"Arial",sans-serif'>Arial</option>
+          <option value='"Arial Black",sans-serif'>Arial Black</option>
           <option value='"Verdana",sans-serif'>Verdana</option>
           <option value='"Trebuchet MS",sans-serif'>Trebuchet MS</option>
           <option value='"Impact",sans-serif'>Impact</option>
-        </optgroup>
-        <optgroup label="明朝・セリフ系">
-          <option value='"Yu Mincho","YuMincho",serif'>游明朝</option>
-          <option value='"Hiragino Mincho ProN",serif'>ヒラギノ明朝</option>
           <option value='"Times New Roman",serif'>Times New Roman</option>
           <option value='"Georgia",serif'>Georgia</option>
-        </optgroup>
-        <optgroup label="装飾・個性系">
-          <option value='"Arial Black",sans-serif'>Arial Black</option>
           <option value='"Courier New",monospace'>Courier New</option>
           <option value='"Comic Sans MS",cursive'>Comic Sans MS</option>
           <option value='"Segoe Script",cursive'>Segoe Script</option>
           <option value='"Brush Script MT",cursive'>Brush Script MT</option>
         </optgroup>
       </select>
-      <div class="small">※実際に表示できるフォントはPCにインストールされているものに依存します。</div>
+      <div class="small">※実際に表示できるフォントはPCにインストールされているものに依存します。Windows標準系・日本語UD系を中心に候補を増やしています。</div>
     </div>
 
     <div class="group">
@@ -302,15 +341,18 @@
         <option value="glow">発光風</option>
       </select>
 
-      <div class="row">
-        <div>
-          <label>色1</label>
-          <input id="frameColor1" type="color" value="#ffffff">
-        </div>
-        <div>
-          <label>色2</label>
-          <input id="frameColor2" type="color" value="#8b7cff">
-        </div>
+      <label>外枠 色1</label>
+      <div class="color-editor">
+        <input id="frameColor1" type="color" value="#ffffff">
+        <input id="frameColor1Hex" type="text" value="#FFFFFF" maxlength="7">
+        <button class="copy-color" type="button" data-copy-target="frameColor1Hex">コピー</button>
+      </div>
+
+      <label>外枠 色2</label>
+      <div class="color-editor">
+        <input id="frameColor2" type="color" value="#8b7cff">
+        <input id="frameColor2Hex" type="text" value="#8B7CFF" maxlength="7">
+        <button class="copy-color" type="button" data-copy-target="frameColor2Hex">コピー</button>
       </div>
 
       <div class="row3">
@@ -388,12 +430,16 @@ const els = {
   selected: document.getElementById('selected'),
   fontSize: document.getElementById('fontSize'),
   fontColor: document.getElementById('fontColor'),
+  fontColorHex: document.getElementById('fontColorHex'),
   useGradient: document.getElementById('useGradient'),
   gradientColor1: document.getElementById('gradientColor1'),
+  gradientColor1Hex: document.getElementById('gradientColor1Hex'),
   gradientColor2: document.getElementById('gradientColor2'),
+  gradientColor2Hex: document.getElementById('gradientColor2Hex'),
   gradientDirection: document.getElementById('gradientDirection'),
   strokeWidth: document.getElementById('strokeWidth'),
   strokeColor: document.getElementById('strokeColor'),
+  strokeColorHex: document.getElementById('strokeColorHex'),
   rotation: document.getElementById('rotation'),
   rotationNumber: document.getElementById('rotationNumber'),
   layer: document.getElementById('layer'),
@@ -403,7 +449,9 @@ const els = {
   fontFamily: document.getElementById('fontFamily'),
   frameStyle: document.getElementById('frameStyle'),
   frameColor1: document.getElementById('frameColor1'),
+  frameColor1Hex: document.getElementById('frameColor1Hex'),
   frameColor2: document.getElementById('frameColor2'),
+  frameColor2Hex: document.getElementById('frameColor2Hex'),
   frameWidth: document.getElementById('frameWidth'),
   frameInset: document.getElementById('frameInset'),
   frameRadius: document.getElementById('frameRadius'),
@@ -458,6 +506,60 @@ const state = {
 
 function clamp(v, min, max){
   return Math.min(max, Math.max(min, v));
+}
+
+function normalizeHex(value){
+  let v = String(value || '').trim().toUpperCase();
+  if(!v.startsWith('#')) v = '#' + v;
+  return /^#[0-9A-F]{6}$/.test(v) ? v : null;
+}
+
+function bindColorPair(colorEl, hexEl, onChange){
+  const syncFromColor = ()=>{
+    hexEl.value = colorEl.value.toUpperCase();
+    if(onChange) onChange();
+  };
+
+  const syncFromHex = ()=>{
+    const valid = normalizeHex(hexEl.value);
+    if(valid){
+      hexEl.value = valid;
+      colorEl.value = valid.toLowerCase();
+      if(onChange) onChange();
+    }
+  };
+
+  colorEl.addEventListener('input', syncFromColor);
+  colorEl.addEventListener('change', syncFromColor);
+
+  hexEl.addEventListener('input', ()=>{
+    const valid = normalizeHex(hexEl.value);
+    if(valid){
+      colorEl.value = valid.toLowerCase();
+      if(onChange) onChange();
+    }
+  });
+  hexEl.addEventListener('change', syncFromHex);
+  hexEl.addEventListener('blur', syncFromHex);
+}
+
+async function copyColorCode(button){
+  const target = document.getElementById(button.dataset.copyTarget);
+  const value = target.value.toUpperCase();
+
+  try{
+    await navigator.clipboard.writeText(value);
+  }catch(e){
+    target.select();
+    document.execCommand('copy');
+  }
+
+  button.textContent = 'コピー済';
+  button.classList.add('copied');
+  setTimeout(()=>{
+    button.textContent = 'コピー';
+    button.classList.remove('copied');
+  }, 900);
 }
 
 function getText(key){
@@ -718,12 +820,16 @@ function syncControls(){
   const obj=state.objects[els.selected.value];
   els.fontSize.value=obj.size;
   els.fontColor.value=obj.color;
+  els.fontColorHex.value=obj.color.toUpperCase();
   els.useGradient.checked=obj.useGradient;
   els.gradientColor1.value=obj.gradient1;
+  els.gradientColor1Hex.value=obj.gradient1.toUpperCase();
   els.gradientColor2.value=obj.gradient2;
+  els.gradientColor2Hex.value=obj.gradient2.toUpperCase();
   els.gradientDirection.value=obj.gradientDirection;
   els.strokeWidth.value=obj.strokeWidth;
   els.strokeColor.value=obj.stroke;
+  els.strokeColorHex.value=obj.stroke.toUpperCase();
   els.rotation.value=obj.rotation;
   els.rotationNumber.value=obj.rotation;
   els.layer.value=obj.layer;
@@ -734,7 +840,9 @@ function syncControls(){
 
   els.frameStyle.value = state.frame.style;
   els.frameColor1.value = state.frame.color1;
+  els.frameColor1Hex.value = state.frame.color1.toUpperCase();
   els.frameColor2.value = state.frame.color2;
+  els.frameColor2Hex.value = state.frame.color2.toUpperCase();
   els.frameWidth.value = state.frame.width;
   els.frameInset.value = state.frame.inset;
   els.frameRadius.value = state.frame.radius;
@@ -806,9 +914,9 @@ function updateFrameFromNumber(){
 
 els.selected.addEventListener('change',()=>{syncControls();render();});
 [
-  els.fontSize,els.fontColor,els.useGradient,
-  els.gradientColor1,els.gradientColor2,els.gradientDirection,
-  els.strokeWidth,els.strokeColor,els.rotation, els.layer,
+  els.fontSize,els.useGradient,
+  els.gradientDirection,
+  els.strokeWidth,els.rotation, els.layer,
   els.boldToggle, els.italicToggle, els.fontFamily
 ].forEach(el=>{
   el.addEventListener('input',updateSelected);
@@ -821,7 +929,7 @@ els.layerNumber.addEventListener('input', updateSelectedFromNumbers);
 els.layerNumber.addEventListener('change', updateSelectedFromNumbers);
 
 [
-  els.frameStyle, els.frameColor1, els.frameColor2,
+  els.frameStyle,
   els.frameWidth, els.frameInset, els.frameRadius, els.frameLayer
 ].forEach(el=>{
   el.addEventListener('input', updateFrame);
@@ -830,6 +938,18 @@ els.layerNumber.addEventListener('change', updateSelectedFromNumbers);
 
 els.frameLayerNumber.addEventListener('input', updateFrameFromNumber);
 els.frameLayerNumber.addEventListener('change', updateFrameFromNumber);
+
+
+bindColorPair(els.fontColor, els.fontColorHex, updateSelected);
+bindColorPair(els.gradientColor1, els.gradientColor1Hex, updateSelected);
+bindColorPair(els.gradientColor2, els.gradientColor2Hex, updateSelected);
+bindColorPair(els.strokeColor, els.strokeColorHex, updateSelected);
+bindColorPair(els.frameColor1, els.frameColor1Hex, updateFrame);
+bindColorPair(els.frameColor2, els.frameColor2Hex, updateFrame);
+
+document.querySelectorAll('.copy-color').forEach(button=>{
+  button.addEventListener('click', ()=>copyColorCode(button));
+});
 
 els.bgFile.addEventListener('change', e=>{
   const file=e.target.files[0];
